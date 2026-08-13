@@ -55,5 +55,10 @@ constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
 	initIOTimerChannelPulldown(io_timers, {Timer::Timer4, Timer::Channel3}, {GPIO::PortD, GPIO::Pin14}),
 };
 
+// PWM暂时不用所以加上if defined,但链接时 io_timer.c 仍然要使用这个全局变量
+#if defined(DIRECT_PWM_OUTPUT_CHANNELS)
 constexpr io_timers_channel_mapping_t io_timers_channel_mapping =
 	initIOTimerChannelMapping(io_timers, timer_io_channels);
+#else
+constexpr io_timers_channel_mapping_t io_timers_channel_mapping{};
+#endif
