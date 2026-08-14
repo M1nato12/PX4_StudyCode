@@ -272,6 +272,7 @@ set(msg_files
 	versioned/VehicleStatus.msg
 	versioned/VtolVehicleStatus.msg
 	versioned/Wind.msg
+	ProcessedData.msg
 )
 list(SORT msg_files)
 

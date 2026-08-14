@@ -1,0 +1,3 @@
+config EXAMPLES_DATA_PROCESSOR
+    bool "data_processor"
+    default n
