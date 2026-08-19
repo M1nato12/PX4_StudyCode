@@ -34,25 +34,25 @@
 #include <px4_arch/io_timer_hw_description.h>
 
 constexpr io_timers_t io_timers[MAX_IO_TIMERS] = {
-	initIOTimer(Timer::Timer1, DMA{DMA::Index2, DMA::Stream5, DMA::Channel6}),
-	initIOTimer(Timer::Timer4, DMA{DMA::Index1, DMA::Stream6, DMA::Channel2}),
+	// initIOTimer(Timer::Timer1, DMA{DMA::Index2, DMA::Stream5, DMA::Channel6}),
+	// initIOTimer(Timer::Timer4, DMA{DMA::Index1, DMA::Stream6, DMA::Channel2}),
 };
 
-static inline constexpr timer_io_channels_t initIOTimerChannelPulldown(const io_timers_t io_timers_conf[MAX_IO_TIMERS],
-		Timer::TimerChannel timer, GPIO::GPIOPin pin)
-{
-	timer_io_channels_t ret = initIOTimerChannel(io_timers_conf, timer, pin);
-	ret.gpio_out |= GPIO_OUTPUT_CLEAR | GPIO_PULLDOWN;
-	return ret;
-}
+// static inline constexpr timer_io_channels_t initIOTimerChannelPulldown(const io_timers_t io_timers_conf[MAX_IO_TIMERS],
+// 		Timer::TimerChannel timer, GPIO::GPIOPin pin)
+// {
+// 	timer_io_channels_t ret = initIOTimerChannel(io_timers_conf, timer, pin);
+// 	ret.gpio_out |= GPIO_OUTPUT_CLEAR | GPIO_PULLDOWN;
+// 	return ret;
+// }
 
 constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel4}, {GPIO::PortE, GPIO::Pin14}),
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel3}, {GPIO::PortE, GPIO::Pin13}),
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel2}, {GPIO::PortE, GPIO::Pin11}),
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel1}, {GPIO::PortE, GPIO::Pin9}),
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer4, Timer::Channel2}, {GPIO::PortD, GPIO::Pin13}),
-	initIOTimerChannelPulldown(io_timers, {Timer::Timer4, Timer::Channel3}, {GPIO::PortD, GPIO::Pin14}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel4}, {GPIO::PortE, GPIO::Pin14}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel3}, {GPIO::PortE, GPIO::Pin13}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel2}, {GPIO::PortE, GPIO::Pin11}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer1, Timer::Channel1}, {GPIO::PortE, GPIO::Pin9}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer4, Timer::Channel2}, {GPIO::PortD, GPIO::Pin13}),
+	// initIOTimerChannelPulldown(io_timers, {Timer::Timer4, Timer::Channel3}, {GPIO::PortD, GPIO::Pin14}),
 };
 
 // PWM暂时不用所以加上if defined,但链接时 io_timer.c 仍然要使用这个全局变量

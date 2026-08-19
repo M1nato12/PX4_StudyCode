@@ -32,13 +32,13 @@
 ############################################################################
 
 add_library(drivers_board
-	can.c
-	i2c.cpp
+	# can.c
+	# i2c.cpp
 	init.c
 	led.c
 	spi.cpp
 	timer_config.cpp
-	usb.c
+	# usb.c
 )
 
 target_link_libraries(drivers_board

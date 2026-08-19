@@ -65,33 +65,71 @@ __END_DECLS
 static uint32_t g_ledmap[] = {
 	GPIO_LED_BLUE,    // Indexed by LED_BLUE
 	GPIO_LED_RED,     // Indexed by LED_RED, LED_AMBER
-	// GPIO_LED_SAFETY,  // Indexed by LED_SAFETY
-	0,
+	0,// GPIO_LED_SAFETY,  // Indexed by LED_SAFETY
 	GPIO_LED_GREEN,   // Indexed by LED_GREEN
 };
 
+// __EXPORT void led_init(void)
+// {
+// 	/* Configure LED GPIOs for output */
+// 	for (size_t l = 0; l < (sizeof(g_ledmap) / sizeof(g_ledmap[0])); l++) {
+// 		stm32_configgpio(g_ledmap[l]);
+// 	}
+// 		/* Temporary power-on LED test */
+// 	stm32_gpiowrite(GPIO_LED_RED, true);
+// 	stm32_gpiowrite(GPIO_LED_GREEN, true);
+// 	stm32_gpiowrite(GPIO_LED_BLUE, true);
+// }
+
 __EXPORT void led_init(void)
 {
-	/* Configure LED GPIOs for output */
+	/* Configure available LED GPIOs */
 	for (size_t l = 0; l < (sizeof(g_ledmap) / sizeof(g_ledmap[0])); l++) {
-		stm32_configgpio(g_ledmap[l]);
+
+		if (g_ledmap[l] != 0) {
+			stm32_configgpio(g_ledmap[l]);
+		}
 	}
-		/* Temporary power-on LED test */
-	stm32_gpiowrite(GPIO_LED_RED, true);
-	stm32_gpiowrite(GPIO_LED_GREEN, true);
-	stm32_gpiowrite(GPIO_LED_BLUE, true);
+
+	/* Temporary startup test: turn all LEDs on */
+	stm32_gpiowrite(GPIO_LED_RED, false);
+	stm32_gpiowrite(GPIO_LED_GREEN, false);
+	stm32_gpiowrite(GPIO_LED_BLUE, false);
 }
+
+// static void phy_set_led(int led, bool state)
+// {
+// 	/* Drive high to switch on */
+// 	stm32_gpiowrite(g_ledmap[led], state);
+// }
 
 static void phy_set_led(int led, bool state)
 {
-	/* Drive high to switch on */
-	stm32_gpiowrite(g_ledmap[led], state);
+	if ((led >= 0) &&
+	    (led < (int)(sizeof(g_ledmap) / sizeof(g_ledmap[0]))) &&
+	    (g_ledmap[led] != 0)) {
+
+		/* Drive high to switch on */
+		stm32_gpiowrite(g_ledmap[led], !state);
+	}
 }
+
+// static bool phy_get_led(int led)
+// {
+
+// 	return stm32_gpioread(g_ledmap[led]);
+// }
 
 static bool phy_get_led(int led)
 {
+	if ((led >= 0) &&
+	    (led < (int)(sizeof(g_ledmap) / sizeof(g_ledmap[0]))) &&
+	    (g_ledmap[led] != 0)) {
 
-	return stm32_gpioread(g_ledmap[led]);
+		return !stm32_gpioread(g_ledmap[led]);
+	}
+
+	return false;
 }
 
 __EXPORT void led_on(int led)

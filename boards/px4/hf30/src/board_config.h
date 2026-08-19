@@ -75,12 +75,12 @@
  * ADC channels:
  * These are the channel numbers of the ADCs of the microcontroller that can be used by the Px4 Firmware in the adc driver.
  */
-#define ADC_CHANNELS (1 << 10) | (1 << 11) | (1 << 12) | (1 << 13) | (1 << 14)
+// #define ADC_CHANNELS (1 << 10) | (1 << 11) | (1 << 12) | (1 << 13) | (1 << 14)
 
-/* ADC defines to be used in sensors.cpp to read from a particular channel. */
-#define ADC_BATTERY_VOLTAGE_CHANNEL  10
-#define ADC_BATTERY_CURRENT_CHANNEL  (-1)
-#define ADC_5V_RAIL_SENSE            13
+// /* ADC defines to be used in sensors.cpp to read from a particular channel. */
+// #define ADC_BATTERY_VOLTAGE_CHANNEL  10
+// #define ADC_BATTERY_CURRENT_CHANNEL  (-1)
+// #define ADC_5V_RAIL_SENSE            13
 // #define ADC_RC_RSSI_CHANNEL          11
 
 // /* Power supply control and monitoring GPIOs. */
@@ -88,10 +88,10 @@
 // #define GPIO_VDD_USB_VALID           (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTC|GPIO_PIN0)
 
 /* Tone alarm output. */
-#define TONE_ALARM_TIMER             9    /* timer 2 */
-#define TONE_ALARM_CHANNEL           2    /* channel 1 */
-#define GPIO_TONE_ALARM_IDLE         (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTA|GPIO_PIN15)
-#define GPIO_TONE_ALARM              (GPIO_ALT|GPIO_AF1|GPIO_SPEED_2MHz|GPIO_PUSHPULL|GPIO_PORTA|GPIO_PIN15)
+// #define TONE_ALARM_TIMER             9    /* timer 2 */
+// #define TONE_ALARM_CHANNEL           2    /* channel 1 */
+// #define GPIO_TONE_ALARM_IDLE         (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTA|GPIO_PIN15)
+// #define GPIO_TONE_ALARM              (GPIO_ALT|GPIO_AF1|GPIO_SPEED_2MHz|GPIO_PUSHPULL|GPIO_PORTA|GPIO_PIN15)
 
 // /**
 //  * PWM:
@@ -183,7 +183,7 @@
 
 
 /* This board provides a DMA pool and APIs */
-#define BOARD_DMA_ALLOC_POOL_SIZE 5120
+// #define BOARD_DMA_ALLOC_POOL_SIZE 5120
 
 // #define BOARD_HAS_ON_RESET 1
 

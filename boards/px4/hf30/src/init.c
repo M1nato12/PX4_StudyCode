@@ -175,8 +175,17 @@ stm32_boardinitialize(void)
 	// board_on_reset(-1);
 
 	// Configure LEDs.
-	board_autoled_initialize();
+	// board_autoled_initialize();
+	// Configure LEDs.
+	led_init();
+    // RED LED blink 3 times during boot
+    for (int i = 0; i < 3; i++) {
 
+        led_off(LED_RED);
+        up_mdelay(500);
+	led_on(LED_RED);
+        up_mdelay(500);
+    }
 
 	// Configure ADC pins.
 // 	stm32_configgpio(GPIO_ADC1_IN2);	/* BATT_VOLTAGE_SENS */
