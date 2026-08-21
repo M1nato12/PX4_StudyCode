@@ -1,0 +1,5 @@
+menuconfig MODULES_HF30_READER
+	bool "hf30_reader"
+	default n
+	---help---
+		Enable support for hf30_reader
