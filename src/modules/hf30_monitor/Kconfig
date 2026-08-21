@@ -1,0 +1,6 @@
+menuconfig MODULES_HF30_MONITOR
+	bool "hf30_monitor"
+	default n
+	---help---
+		Enable HF30 monitor module
+

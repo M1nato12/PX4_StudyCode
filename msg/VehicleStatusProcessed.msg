@@ -1,0 +1,3 @@
+uint64 timestamp
+float32 nav_state
+float32 processed_value

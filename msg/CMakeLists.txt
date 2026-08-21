@@ -115,6 +115,7 @@ set(msg_files
 	Gripper.msg
 	HealthReport.msg
 	HeaterStatus.msg
+	Hf30MonitorStatus.msg
 	HoverThrustEstimate.msg
 	InputRc.msg
 	InternalCombustionEngineControl.msg
@@ -226,6 +227,7 @@ set(msg_files
 	VehicleAcceleration.msg
 	VehicleAirData.msg
 	VehicleAngularAccelerationSetpoint.msg
+	VehicleAttitudeProcessed.msg
 	VehicleConstraints.msg
 	VehicleImu.msg
 	VehicleImuStatus.msg
@@ -234,6 +236,7 @@ set(msg_files
 	VehicleOpticalFlow.msg
 	VehicleOpticalFlowVel.msg
 	VehicleRoi.msg
+	VehicleStatusProcessed.msg
 	VehicleThrustSetpoint.msg
 	VehicleTorqueSetpoint.msg
 	VelocityLimits.msg
