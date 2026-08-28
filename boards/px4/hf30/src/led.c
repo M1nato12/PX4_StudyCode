@@ -91,7 +91,7 @@ __EXPORT void led_init(void)
 		}
 	}
 
-	/* Temporary startup test: turn all LEDs on */
+	/* Temporary startup test: turn all LEDs off */
 	stm32_gpiowrite(GPIO_LED_RED, false);
 	stm32_gpiowrite(GPIO_LED_GREEN, false);
 	stm32_gpiowrite(GPIO_LED_BLUE, false);
@@ -110,7 +110,7 @@ static void phy_set_led(int led, bool state)
 	    (g_ledmap[led] != 0)) {
 
 		/* Drive high to switch on */
-		stm32_gpiowrite(g_ledmap[led], !state);
+		stm32_gpiowrite(g_ledmap[led], state);
 	}
 }
 
@@ -126,7 +126,7 @@ static bool phy_get_led(int led)
 	    (led < (int)(sizeof(g_ledmap) / sizeof(g_ledmap[0]))) &&
 	    (g_ledmap[led] != 0)) {
 
-		return !stm32_gpioread(g_ledmap[led]);
+		return stm32_gpioread(g_ledmap[led]);
 	}
 
 	return false;

@@ -64,12 +64,12 @@ constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
 	 * PA6  MISO
 	 * PA7  MOSI
 	 */
-	// initSPIBus(SPI::Bus::SPI1, {
-	// 	initSPIDevice(
-	// 		SPIDEV_FLASH(0),
-	// 		SPI::CS{GPIO::PortA, GPIO::Pin4}
-	// 	),
-	// }),
+	initSPIBus(SPI::Bus::SPI1, {
+		initSPIDevice(
+			SPIDEV_FLASH(0),
+			SPI::CS{GPIO::PortA, GPIO::Pin4}
+		),
+	}),
 
 
 	/*

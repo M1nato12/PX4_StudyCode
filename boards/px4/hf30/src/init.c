@@ -181,11 +181,28 @@ stm32_boardinitialize(void)
     // RED LED blink 3 times during boot
     for (int i = 0; i < 3; i++) {
 
-        led_off(LED_RED);
-        up_mdelay(500);
 	led_on(LED_RED);
         up_mdelay(500);
+        led_off(LED_RED);
+        up_mdelay(500);
     }
+
+	// Configure Bluetooth control GPIOs
+	stm32_configgpio(GPIO_BT_PWREN);
+	stm32_configgpio(GPIO_BT_RESET);
+
+	// 先开蓝牙电源
+	stm32_gpiowrite(GPIO_BT_PWREN, true);
+
+	// 等3.3V_BT稳定
+	up_mdelay(1000);
+
+	// 保持一段时间复位
+	stm32_gpiowrite(GPIO_BT_RESET, false);
+	up_mdelay(1000);
+
+	// 最后释放复位
+	stm32_gpiowrite(GPIO_BT_RESET, true);
 
 	// Configure ADC pins.
 // 	stm32_configgpio(GPIO_ADC1_IN2);	/* BATT_VOLTAGE_SENS */
@@ -194,8 +211,8 @@ stm32_boardinitialize(void)
 // 	stm32_configgpio(GPIO_ADC1_IN11);	/* RSSI analog in */
 
 // 	// Configure CAN interface
-// 	stm32_configgpio(GPIO_CAN1_RX);
-// 	stm32_configgpio(GPIO_CAN1_TX);
+	stm32_configgpio(GPIO_CAN1_RX);
+	stm32_configgpio(GPIO_CAN1_TX);
 
 	// Configure power supply control/sense pins.
 	// stm32_configgpio(GPIO_PERIPH_3V3_EN);
@@ -232,6 +249,9 @@ stm32_boardinitialize(void)
 // 	// Configure heater GPIO.
 // 	stm32_configgpio(GPIO_HEATER_INPUT);
 // 	stm32_configgpio(GPIO_HEATER_OUTPUT);
+    	led_on(LED_RED);
+	led_on(LED_GREEN);
+	led_on(LED_BLUE);
 }
 
 /****************************************************************************
@@ -266,12 +286,36 @@ stm32_boardinitialize(void)
 // static struct spi_dev_s *spi4;
 // #endif
 
-// static struct spi_dev_s *spi1;
-static struct spi_dev_s *spi3;
+static struct spi_dev_s *spi1;
 // static struct sdio_dev_s *sdio;
 // #if defined(CONFIG_STM32_SPI3)
 // static struct spi_dev_s *spi3;
 // #endif
+
+//测试spi1代码
+static void test_w25q128_jedec_id(struct spi_dev_s *spi)
+{
+	uint8_t tx[4] = {0x9F, 0x00, 0x00, 0x00};
+	uint8_t rx[4] = {};
+
+	// SPI 基本参数
+	SPI_SETFREQUENCY(spi, 1000000);   // 先用 1 MHz，方便 bring-up
+	SPI_SETBITS(spi, 8);
+	SPI_SETMODE(spi, SPIDEV_MODE0);
+
+	// 选中 W25Q128
+	SPI_SELECT(spi, SPIDEV_FLASH(0), true);
+
+	// 同时发送和接收 4 字节
+	SPI_EXCHANGE(spi, tx, rx, sizeof(tx));
+
+	// 释放 CS
+	SPI_SELECT(spi, SPIDEV_FLASH(0), false);
+
+	syslog(LOG_INFO,
+	       "W25Q128 JEDEC ID: %02X %02X %02X\n",
+	       rx[1], rx[2], rx[3]);
+}
 
 __EXPORT int board_app_initialize(uintptr_t arg)
 {
@@ -289,10 +333,10 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 #endif
 
 	// // Initial LED state.
-	drv_led_start();
-	led_off(LED_RED);
-	led_off(LED_GREEN);
-	led_off(LED_BLUE);
+	// drv_led_start();
+	// led_off(LED_RED);
+	// led_off(LED_GREEN);
+	// led_off(LED_BLUE);
 
 	if (board_hardfault_init(2, true) != 0) {
 		led_on(LED_RED);
@@ -302,42 +346,40 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	// stm32_gpiowrite(GPIO_HEATER_OUTPUT, 0);
 
 	// Configure SPI-based devices.
-	// spi1 = stm32_spibus_initialize(1);
-	spi3 = stm32_spibus_initialize(3);
+	spi1 = stm32_spibus_initialize(1);
 
-	if (!spi3) {
-		syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 3\n");
+	if (!spi1) {
+		syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 1\n");
 		led_on(LED_RED);
+	}
+	else {
+	test_w25q128_jedec_id(spi1);
 	}
 
 
-	// Default SPI1 to 1MHz
-	// SPI_SETFREQUENCY(spi1, 10000000);
-	// SPI_SETBITS(spi1, 8);
-	// SPI_SETMODE(spi1, SPIDEV_MODE3);
-	// up_udelay(20);
-	// SPI_SETFREQUENCY(spi1, 8000000);
-	// SPI_SETBITS(spi1, 8);
-	// SPI_SETMODE(spi1, SPIDEV_MODE3);
-	// up_udelay(20);
+// Default SPI1 to 1MHz
+	SPI_SETFREQUENCY(spi1, 10000000);
+	SPI_SETBITS(spi1, 8);
+	SPI_SETMODE(spi1, SPIDEV_MODE3);
+	up_udelay(20);
 
-// 	// Get the SPI port for the FRAM.
-// 	spi2 = stm32_spibus_initialize(2);
+	// // Get the SPI port for the FRAM.
+	// spi2 = stm32_spibus_initialize(2);
 
-// 	if (!spi2) {
-// 		syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 2\n");
-// 		led_on(LED_RED);
-// 	}
+	// if (!spi2) {
+	// 	syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 2\n");
+	// 	led_on(LED_RED);
+	// }
 
-// 	/**
-// 	 * Default SPI2 to 12MHz and de-assert the known chip selects.
-// 	 * MS5611 has max SPI clock speed of 20MHz.
-// 	 */
+	// /**
+	//  * Default SPI2 to 12MHz and de-assert the known chip selects.
+	//  * MS5611 has max SPI clock speed of 20MHz.
+	//  */
 
-// 	// XXX start with 10.4 MHz and go up to 20 once validated.
-// 	SPI_SETFREQUENCY(spi2, 20 * 1000 * 1000);
-// 	SPI_SETBITS(spi2, 8);
-// 	SPI_SETMODE(spi2, SPIDEV_MODE3);
+	// // XXX start with 10.4 MHz and go up to 20 once validated.
+	// SPI_SETFREQUENCY(spi2, 20 * 1000 * 1000);
+	// SPI_SETBITS(spi2, 8);
+	// SPI_SETMODE(spi2, SPIDEV_MODE3);
 
 // #if defined(CONFIG_STM32_SPI4)
 

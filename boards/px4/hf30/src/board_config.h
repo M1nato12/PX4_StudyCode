@@ -67,6 +67,12 @@
 #define BOARD_ARMED_LED        LED_BLUE
 #define BOARD_ARMED_STATE_LED  LED_GREEN
 
+/* PX4FMU BT ***********************************************************************************/
+/* BT */
+#define GPIO_BT_RESET                   (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTB|GPIO_PIN6)
+#define GPIO_BT_PWREN                  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTB|GPIO_PIN7)
+
+
 // #ifdef CONFIG_STM32_SPI4
 // #  define BOARD_HAS_BUS_MANIFEST 1 // We support a bus manifest because spi 4 is optional
 // #endif /* CONFIG_STM32_SPI4 */
@@ -88,17 +94,17 @@
 // #define GPIO_VDD_USB_VALID           (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTC|GPIO_PIN0)
 
 /* Tone alarm output. */
-// #define TONE_ALARM_TIMER             9    /* timer 2 */
-// #define TONE_ALARM_CHANNEL           2    /* channel 1 */
-// #define GPIO_TONE_ALARM_IDLE         (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTA|GPIO_PIN15)
-// #define GPIO_TONE_ALARM              (GPIO_ALT|GPIO_AF1|GPIO_SPEED_2MHz|GPIO_PUSHPULL|GPIO_PORTA|GPIO_PIN15)
+#define TONE_ALARM_TIMER             9    /* timer 9 */
+#define TONE_ALARM_CHANNEL           2    /* channel 2 */
+#define GPIO_TONE_ALARM_IDLE         (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTE|GPIO_PIN6)
+#define GPIO_TONE_ALARM              (GPIO_ALT|GPIO_AF3|GPIO_SPEED_2MHz|GPIO_PUSHPULL|GPIO_PORTE|GPIO_PIN6)
 
 // /**
 //  * PWM:
 //  *
 //  * Six PWM outputs are configured.
 //  */
-// #define DIRECT_PWM_OUTPUT_CHANNELS   6
+#define DIRECT_PWM_OUTPUT_CHANNELS   1
 
 // /**
 //  * USB OTG FS:

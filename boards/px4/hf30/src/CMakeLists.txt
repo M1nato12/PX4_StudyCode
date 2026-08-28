@@ -32,8 +32,8 @@
 ############################################################################
 
 add_library(drivers_board
-	# can.c
-	# i2c.cpp
+	can.c
+	i2c.cpp
 	init.c
 	led.c
 	spi.cpp
