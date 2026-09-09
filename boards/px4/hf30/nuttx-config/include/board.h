@@ -286,6 +286,19 @@
 
 
 /*
+ * UART7
+ *
+ * GNSS
+ *
+ * PE7 RX
+ * PE8 TX
+ *
+ */
+#define GPIO_UART7_RX GPIO_UART7_RX_1
+#define GPIO_UART7_TX GPIO_UART7_TX_1
+
+
+/*
  * CAN
  *
  * CAN1 is routed to the onboard transceiver.

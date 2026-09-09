@@ -207,7 +207,7 @@ PARAM_DEFINE_FLOAT(GPS_YAW_OFFSET, 0.f);
  * @reboot_required true
  * @group GPS
  */
-PARAM_DEFINE_INT32(GPS_1_PROTOCOL, 1);
+PARAM_DEFINE_INT32(GPS_1_PROTOCOL, 6);
 
 /**
  * Protocol for Secondary GPS

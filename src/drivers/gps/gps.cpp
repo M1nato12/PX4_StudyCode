@@ -1340,6 +1340,50 @@ GPS::custom_command(int argc, char *argv[])
 		return 0;
 	}
 
+	if (argc == 1 && !strcmp(argv[0], "monitor")) {
+
+	uORB::Subscription gps_sub{ORB_ID(sensor_gps)};
+	sensor_gps_s gps{};
+
+	const hrt_abstime start_time = hrt_absolute_time();
+
+	while (hrt_elapsed_time(&start_time) < 30000000ULL) {
+
+		if (gps_sub.update(&gps)) {
+
+			PX4_INFO(
+				"fix:%u sat:%u "
+				"lat:%.7f lon:%.7f "
+				"alt:%.2f "
+				"vel:%.2f "
+				"vn:%.2f ve:%.2f vd:%.2f "
+				"cog:%.3f "
+				"heading:%.3f "
+				"heading_acc:%.3f",
+
+				(unsigned)gps.fix_type,
+				(unsigned)gps.satellites_used,
+				gps.latitude_deg,
+				gps.longitude_deg,
+				(double)gps.altitude_msl_m,
+				(double)gps.vel_m_s,
+				(double)gps.vel_n_m_s,
+				(double)gps.vel_e_m_s,
+				(double)gps.vel_d_m_s,
+				(double)gps.cog_rad,
+				(double)gps.heading,
+				(double)gps.heading_accuracy
+			);
+		}
+
+		px4_usleep(1000000);
+	}
+
+	PX4_INFO("monitor finished");
+
+	return PX4_OK;
+}
+
 	return (res) ? 0 : print_usage("unknown command");
 }
 

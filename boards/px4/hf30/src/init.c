@@ -78,6 +78,9 @@
 #include <px4_platform/board_dma_alloc.h>
 
 #include <px4_arch/io_timer.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -187,22 +190,53 @@ stm32_boardinitialize(void)
         up_mdelay(500);
     }
 
-	// Configure Bluetooth control GPIOs
-	stm32_configgpio(GPIO_BT_PWREN);
-	stm32_configgpio(GPIO_BT_RESET);
+// Configure Bluetooth control GPIOs
+stm32_configgpio(GPIO_BT_PWREN);
+stm32_configgpio(GPIO_BT_RESET);
 
-	// 先开蓝牙电源
-	stm32_gpiowrite(GPIO_BT_PWREN, true);
+syslog(LOG_INFO, "[BT] GPIO configured\n");
 
-	// 等3.3V_BT稳定
-	up_mdelay(1000);
+// 打开蓝牙电源
+stm32_gpiowrite(GPIO_BT_PWREN, true);
+syslog(LOG_INFO, "[BT] power enabled\n");
 
-	// 保持一段时间复位
-	stm32_gpiowrite(GPIO_BT_RESET, false);
-	up_mdelay(1000);
+up_mdelay(1000);
 
-	// 最后释放复位
-	stm32_gpiowrite(GPIO_BT_RESET, true);
+// 拉低复位
+stm32_gpiowrite(GPIO_BT_RESET, false);
+syslog(LOG_INFO, "[BT] reset asserted\n");
+
+up_mdelay(1000);
+
+// 释放复位
+stm32_gpiowrite(GPIO_BT_RESET, true);
+syslog(LOG_INFO, "[BT] reset released\n");
+
+// int fd = open("/dev/ttyS1", O_RDWR | O_NONBLOCK);
+
+// if (fd < 0) {
+//     syslog(LOG_ERR, "[BT] open ttyS1 failed\n");
+
+// } else {
+//     char buffer[64] = {0};
+//     const char *cmd = "AT\r\n";
+
+//     write(fd, cmd, strlen(cmd));
+//     syslog(LOG_INFO, "[BT] AT sent\n");
+
+//     up_mdelay(500);
+
+//     int n = read(fd, buffer, sizeof(buffer) - 1);
+
+//     if (n > 0) {
+//         buffer[n] = '\0';
+//         syslog(LOG_INFO, "[BT] RX: %s\n", buffer);
+//     } else {
+//         syslog(LOG_WARNING, "[BT] no response\n");
+//     }
+
+//     close(fd);
+// }
 
 	// Configure ADC pins.
 // 	stm32_configgpio(GPIO_ADC1_IN2);	/* BATT_VOLTAGE_SENS */
