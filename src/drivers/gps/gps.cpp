@@ -46,6 +46,7 @@
 #endif
 
 #include <cstring>
+#include <lib/geo/geo.h>
 
 #include <drivers/drv_sensor.h>
 #include <lib/drivers/device/Device.hpp>
@@ -65,6 +66,7 @@
 #include <uORB/topics/gps_dump.h>
 #include <uORB/topics/gps_inject_data.h>
 #include <uORB/topics/sensor_gps.h>
+#include <uORB/topics/lg580p_extra.h>
 #include <uORB/topics/sensor_gnss_relative.h>
 
 #ifndef CONSTRAINED_FLASH
@@ -178,7 +180,12 @@ private:
 	char				_port[20] {};					///< device / serial port path
 
 	bool				_healthy{false};				///< flag to signal if the GPS is ok
-	bool				_mode_auto;					///< if true, auto-detect which GPS is attached
+	bool				_mode_auto;
+
+	//LG580P extra
+	lg580p_extra_s		        _lg580p_extra{};
+	MapProjection 			_map_projection{};
+	double				_ref_alt_m{NAN};
 
 	gps_driver_mode_t		_mode;						///< current mode
 
@@ -187,10 +194,11 @@ private:
 
 	GPS_Sat_Info			*_sat_info{nullptr};				///< instance of GPS sat info data object
 
-	sensor_gps_s			_sensor_gps{};				///< uORB topic for gps position
+	sensor_gps_s			_sensor_gps{};			///< uORB topic for lg580p extra info
 	satellite_info_s		*_p_report_sat_info{nullptr};			///< pointer to uORB topic for satellite info
 
 	uORB::PublicationMulti<sensor_gps_s>	_sensor_gps_pub{ORB_ID(sensor_gps)};	///< uORB pub for gps position
+	uORB::PublicationMulti<lg580p_extra_s>	_lg580p_extra_pub{ORB_ID(lg580p_extra)};	///< uORB pub for lg580p extra info
 	uORB::PublicationMulti<sensor_gnss_relative_s> _sensor_gnss_relative_pub{ORB_ID(sensor_gnss_relative)};
 
 	uORB::PublicationMulti<satellite_info_s>	_report_sat_info_pub{ORB_ID(satellite_info)};		///< uORB pub for satellite info
@@ -313,6 +321,14 @@ GPS::GPS(const char *path, gps_driver_mode_t mode, GPSHelper::Interface interfac
 
 	_sensor_gps.heading = NAN;
 	_sensor_gps.heading_offset = NAN;
+	_lg580p_extra.baseline_length_m = NAN;
+	_lg580p_extra.quality = 0;
+	_lg580p_extra.used_sv = 0;
+	_lg580p_extra.north_m = NAN;
+	_lg580p_extra.east_m = NAN;
+	_lg580p_extra.down_m = NAN;
+	_lg580p_extra.beijing_time_usec = 0;
+
 
 	int32_t enable_sat_info = 0;
 	param_get(param_find("GPS_SAT_INFO"), &enable_sat_info);
@@ -903,7 +919,7 @@ GPS::run()
 			break;
 
 		case gps_driver_mode_t::NMEA:
-			_helper = new GPSDriverNMEA(&GPS::callback, this, &_sensor_gps, _p_report_sat_info, heading_offset);
+			_helper = new GPSDriverNMEA(&GPS::callback, this, &_sensor_gps, _p_report_sat_info, &_lg580p_extra, heading_offset);
 			set_device_type(DRV_GPS_DEVTYPE_NMEA);
 			break;
 #endif // CONSTRAINED_FLASH
@@ -1235,15 +1251,62 @@ void
 GPS::publish()
 {
 	if (_instance == Instance::Main || _is_gps_main_advertised.load()) {
+
 		_sensor_gps.device_id = get_device_id();
 
 		_sensor_gps.selected_rtcm_instance = _selected_rtcm_instance;
 		_sensor_gps.rtcm_injection_rate = _rtcm_injection_rate;
 
+
+		// Initialize local NED reference when GNSS quality is good enough
+		if (!_map_projection.isInitialized()
+		    && _sensor_gps.fix_type >= 3
+		    && _sensor_gps.satellites_used >= 15
+		    && _sensor_gps.hdop < 1.0f) {
+
+			_map_projection.initReference(
+				_sensor_gps.latitude_deg,
+				_sensor_gps.longitude_deg,
+				_sensor_gps.timestamp
+			);
+
+			_ref_alt_m = _sensor_gps.altitude_msl_m;
+		}
+
+
+		// Convert global GNSS position to local NED position
+		if (_map_projection.isInitialized()) {
+
+			_map_projection.project(
+				_sensor_gps.latitude_deg,
+				_sensor_gps.longitude_deg,
+				_lg580p_extra.north_m,
+				_lg580p_extra.east_m
+			);
+
+			_lg580p_extra.down_m =
+				-(_sensor_gps.altitude_msl_m - _ref_alt_m);
+		}
+
+
+		// Convert UTC to Beijing time for logging/display only
+		if (_sensor_gps.time_utc_usec != 0) {
+
+			_lg580p_extra.beijing_time_usec =
+				_sensor_gps.time_utc_usec
+				+ 8ULL * 3600ULL * 1000000ULL;
+		}
+
+
+		// Publish standard GPS data
 		_sensor_gps_pub.publish(_sensor_gps);
-		// Heading/yaw data can be updated at a lower rate than the other navigation data.
-		// The uORB message definition requires this data to be set to a NAN if no new valid data is available.
+
+		// Publish LG580P extra data
+		_lg580p_extra_pub.publish(_lg580p_extra);
+
+
 		_sensor_gps.heading = NAN;
+
 		_is_gps_main_advertised.store(true);
 	}
 }

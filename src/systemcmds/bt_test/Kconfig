@@ -1,0 +1,12 @@
+menuconfig SYSTEMCMDS_BT_TEST
+	bool "bt_test"
+	default n
+	---help---
+		Enable support for bt_test
+
+menuconfig USER_BT_TEST
+	bool "bt_test running as userspace module"
+	default y
+	depends on BOARD_PROTECTED && SYSTEMCMDS_BT_TEST
+	---help---
+		Put bt_test in userspace memory

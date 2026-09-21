@@ -128,6 +128,7 @@ set(msg_files
 	LandingTargetPose.msg
 	LaunchDetectionStatus.msg
 	LedControl.msg
+	Lg580pExtra.msg
 	LoggerStatus.msg
 	LogMessage.msg
 	MagnetometerBiasEstimate.msg

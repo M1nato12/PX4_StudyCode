@@ -315,7 +315,7 @@ syslog(LOG_INFO, "[BT] reset released\n");
 
 // static struct spi_dev_s *spi1;
 // static struct spi_dev_s *spi2;
-// static struct sdio_dev_s *sdio;
+static struct sdio_dev_s *sdio;
 // #if defined(CONFIG_STM32_SPI4)
 // static struct spi_dev_s *spi4;
 // #endif
@@ -437,28 +437,28 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 // #endif /* defined(CONFIG_STM32_SPI4) */
 
 
-// #ifdef CONFIG_MMCSD
+#ifdef CONFIG_MMCSD
 
 	// First, get an instance of the SDIO interface.
-	// sdio = sdio_initialize(CONFIG_NSH_MMCSDSLOTNO);
+	sdio = sdio_initialize(CONFIG_NSH_MMCSDSLOTNO);
 
-	// if (!sdio) {
-	// 	led_on(LED_RED);
-	// 	syslog(LOG_ERR, "[boot] Failed to initialize SDIO slot %d\n", CONFIG_NSH_MMCSDSLOTNO);
-	// }
+	if (!sdio) {
+		led_on(LED_RED);
+		syslog(LOG_ERR, "[boot] Failed to initialize SDIO slot %d\n", CONFIG_NSH_MMCSDSLOTNO);
+	}
 
-	// Now bind the SDIO interface to the MMC/SD driver.
-	// int ret = mmcsd_slotinitialize(CONFIG_NSH_MMCSDMINOR, sdio);
+	// // Now bind the SDIO interface to the MMC/SD driver.
+	int ret = mmcsd_slotinitialize(CONFIG_NSH_MMCSDMINOR, sdio);
 
-	// if (ret != OK) {
-	// 	led_on(LED_RED);
-	// 	syslog(LOG_ERR, "[boot] Failed to bind SDIO to the MMC/SD driver: %d\n", ret);
-	// }
+	if (ret != OK) {
+		led_on(LED_RED);
+		syslog(LOG_ERR, "[boot] Failed to bind SDIO to the MMC/SD driver: %d\n", ret);
+	}
 
 	// Then let's guess and say that there is a card in the slot. There is no card detect GPIO.
-	// sdio_mediachange(sdio, true);
+	sdio_mediachange(sdio, true);
 
-// #endif
+#endif
 
 	/* Configure the HW based on the manifest */
 
