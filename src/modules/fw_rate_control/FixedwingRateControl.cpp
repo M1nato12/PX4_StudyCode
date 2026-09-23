@@ -84,6 +84,18 @@ FixedwingRateControl::parameters_update()
 	_rate_control.setIntegratorLimit(
 		Vector3f(_param_fw_rr_imax.get(), _param_fw_pr_imax.get(), _param_fw_yr_imax.get()));
 
+	const bool adrc_parameters_valid = _adrc_rate_control.setParameters(
+		_param_fw_adrc_r0.get(), _param_fw_adrc_h0.get(),
+		Vector3f(_param_fw_adrc_b_r.get(), _param_fw_adrc_b_p.get(), _param_fw_adrc_b_y.get()),
+		Vector3f(_param_fw_adrc_wo_r.get(), _param_fw_adrc_wo_p.get(), _param_fw_adrc_wo_y.get()),
+		Vector3f(_param_fw_adrc_k_r.get(), _param_fw_adrc_k_p.get(), _param_fw_adrc_k_y.get()),
+		_param_fw_adrc_alpha.get(), _param_fw_adrc_delta.get());
+	_use_adrc = _param_fw_adrc_en.get() != 0 && adrc_parameters_valid;
+
+	if (_param_fw_adrc_en.get() != 0 && !adrc_parameters_valid) {
+		PX4_WARN("invalid FW ADRC parameters, using PID");
+	}
+
 	if (_handle_param_vt_fw_difthr_en != PARAM_INVALID) {
 		param_get(_handle_param_vt_fw_difthr_en, &_param_vt_fw_difthr_en);
 	}
@@ -358,15 +370,68 @@ void FixedwingRateControl::Run()
 					body_rates_setpoint = Vector3f(-_rates_sp.yaw, _rates_sp.pitch, _rates_sp.roll);
 				}
 
+				// pitch test
+				const hrt_abstime now = hrt_absolute_time();
+
+				static hrt_abstime excitation_start_us{0};
+
+				if (excitation_start_us == 0) {
+					excitation_start_us = now;
+				}
+
+				const float test_time_s = (now - excitation_start_us) * 1e-6f;
+
+				constexpr float pitch_amplitude = 0.35f;
+				constexpr float pitch_frequency_hz = 0.2f;
+
+				body_rates_setpoint(1) =
+					pitch_amplitude * sinf(2.f * M_PI_F * pitch_frequency_hz * test_time_s);
+
+				// 将控制器实际使用的俯仰目标记录到 vehicle_rates_setpoint
+				_rates_sp.pitch = body_rates_setpoint(1);
+				_rates_sp.timestamp = now;
+				_rate_sp_pub.publish(_rates_sp);
+
 				const Vector3f gain_ff(_param_fw_rr_ff.get(), _param_fw_pr_ff.get(), _param_fw_yr_ff.get());
 				const Vector3f scaled_gain_ff = gain_ff / _airspeed_scaling;
 				_rate_control.setFeedForwardGain(scaled_gain_ff);
 
 				// Run attitude RATE controllers which need the desired attitudes from above, add trim.
-				const Vector3f angular_acceleration_setpoint = _rate_control.update(rates, body_rates_setpoint, angular_accel, dt,
-						_landed);
+				Vector3f angular_acceleration_setpoint{};
+				const float airspeed_scaling_sq = _airspeed_scaling * _airspeed_scaling;
+				const bool use_adrc = _use_adrc && PX4_ISFINITE(airspeed_scaling_sq)
+						      && airspeed_scaling_sq > FLT_EPSILON;
+				float pid_output = NAN;
+				float adrc_output = NAN;
 
-				Vector3f control_u = angular_acceleration_setpoint * _airspeed_scaling * _airspeed_scaling;
+				if (use_adrc) {
+					if (!_adrc_was_active || _rates_sp.reset_integral || _landed
+					    || !_in_fw_or_transition_wo_tailsitter_transition) {
+						_adrc_rate_control.reset(rates, body_rates_setpoint);
+					}
+
+					angular_acceleration_setpoint =
+						_adrc_rate_control.update(
+						rates,
+						body_rates_setpoint,
+						dt,
+						_landed || !_in_fw_or_transition_wo_tailsitter_transition);
+					adrc_output = angular_acceleration_setpoint(1);
+					_adrc_was_active = true;
+
+				} else {
+					_adrc_was_active = false;
+					angular_acceleration_setpoint =
+					_rate_control.update(
+					rates,
+					body_rates_setpoint,
+					angular_accel,
+					dt,
+					_landed);
+					pid_output = angular_acceleration_setpoint(1);
+				}
+
+				Vector3f control_u = angular_acceleration_setpoint * airspeed_scaling_sq;
 
 				// Special case yaw in Acro: if the parameter FW_ACRO_YAW_EN is not set then don't rate-control yaw
 				if (!_vcontrol_mode.flag_control_attitude_enabled && _vcontrol_mode.flag_control_manual_enabled
@@ -378,10 +443,39 @@ void FixedwingRateControl::Run()
 				if (control_u.isAllFinite()) {
 					matrix::constrain(control_u + trim, -1.f, 1.f).copyTo(_vehicle_torque_setpoint.xyz);
 
+					if (use_adrc) {
+						const Vector3f limited_output(_vehicle_torque_setpoint.xyz);
+						_adrc_rate_control.setAppliedControl((limited_output - trim) / airspeed_scaling_sq);
+					}
+
 				} else {
 					_rate_control.resetIntegral();
+					_adrc_was_active = false;
 					trim.copyTo(_vehicle_torque_setpoint.xyz);
 				}
+
+				fw_rate_control_status_s fw_rate_control_status{};
+				fw_rate_control_status.timestamp = hrt_absolute_time();
+				fw_rate_control_status.adrc_active = use_adrc;
+				fw_rate_control_status.pitch_rate_sp = body_rates_setpoint(1);
+				fw_rate_control_status.pitch_rate = rates(1);
+				fw_rate_control_status.pid_output = pid_output;
+				fw_rate_control_status.adrc_output = adrc_output;
+				fw_rate_control_status.selected_output = angular_acceleration_setpoint(1);
+				fw_rate_control_status.applied_output = _vehicle_torque_setpoint.xyz[1];
+
+				if (use_adrc) {
+					fw_rate_control_status.adrc_z1 = _adrc_rate_control.getZ1()(1);
+					fw_rate_control_status.adrc_z2 = _adrc_rate_control.getZ2()(1);
+					fw_rate_control_status.adrc_last_u = _adrc_rate_control.getLastControl()(1);
+
+				} else {
+					fw_rate_control_status.adrc_z1 = NAN;
+					fw_rate_control_status.adrc_z2 = NAN;
+					fw_rate_control_status.adrc_last_u = NAN;
+				}
+
+				_fw_rate_control_status_pub.publish(fw_rate_control_status);
 
 				/* throttle passed through if it is finite */
 				_vehicle_thrust_setpoint.xyz[0] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;

@@ -454,3 +454,146 @@ PARAM_DEFINE_INT32(FW_SPOILERS_MAN, 0);
  * @group FW Rate Control
  */
 PARAM_DEFINE_INT32(FW_ACRO_YAW_EN, 0);
+
+/**
+ * Enable the fixed-wing ADRC rate controller.
+ *
+ * ADRC is used only when all ADRC parameters are valid. Tune its control
+ * effectiveness parameters before enabling it.
+ *
+ * @boolean
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_INT32(FW_ADRC_EN, 0);
+
+/**
+ * ADRC tracking differentiator speed.
+ *
+ * @min 0.001
+ * @decimal 3
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_R0, 1.f);
+
+/**
+ * ADRC tracking differentiator filter time.
+ *
+ * @unit s
+ * @min 0.001
+ * @decimal 3
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_H0, 0.01f);
+
+/**
+ * ADRC roll control effectiveness at trim airspeed.
+ *
+ * Rate acceleration per unscaled controller output. Set the measured sign.
+ * Zero disables ADRC until this parameter is identified.
+ *
+ * @decimal 3
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_B_R, 0.f);
+
+/**
+ * ADRC pitch control effectiveness at trim airspeed.
+ *
+ * Rate acceleration per unscaled controller output. Set the measured sign.
+ * Zero disables ADRC until this parameter is identified.
+ *
+ * @decimal 3
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_B_P, 0.f);
+
+/**
+ * ADRC yaw control effectiveness at trim airspeed.
+ *
+ * Rate acceleration per unscaled controller output. Set the measured sign.
+ * Zero disables ADRC until this parameter is identified.
+ *
+ * @decimal 3
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_B_Y, 0.f);
+
+/**
+ * ADRC roll observer bandwidth.
+ *
+ * @unit rad/s
+ * @min 0.1
+ * @max 10
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_WO_R, 5.f);
+
+/**
+ * ADRC pitch observer bandwidth.
+ *
+ * @unit rad/s
+ * @min 0.1
+ * @max 10
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_WO_P, 5.f);
+
+/**
+ * ADRC yaw observer bandwidth.
+ *
+ * @unit rad/s
+ * @min 0.1
+ * @max 10
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_WO_Y, 5.f);
+
+/**
+ * ADRC roll rate error gain.
+ *
+ * @min 0
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_K_R, 1.f);
+
+/**
+ * ADRC pitch rate error gain.
+ *
+ * @min 0
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_K_P, 1.f);
+
+/**
+ * ADRC yaw rate error gain.
+ *
+ * @min 0
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_K_Y, 1.f);
+
+/**
+ * ADRC rate error exponent.
+ *
+ * @min 0.01
+ * @max 1
+ * @decimal 2
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_ALPHA, 0.5f);
+
+/**
+ * ADRC rate error linearization threshold.
+ *
+ * @unit rad/s
+ * @min 0.0001
+ * @decimal 4
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_FLOAT(FW_ADRC_DELTA, 0.01f);

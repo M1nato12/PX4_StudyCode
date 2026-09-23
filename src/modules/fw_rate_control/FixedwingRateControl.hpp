@@ -34,6 +34,7 @@
 #pragma once
 
 #include <lib/rate_control/rate_control.hpp>
+#include "ADRCRateControl.hpp"
 
 #include <drivers/drv_hrt.h>
 #include <lib/mathlib/mathlib.h>
@@ -57,6 +58,7 @@
 #include <uORB/topics/airspeed_validated.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/control_allocator_status.h>
+#include <uORB/topics/fw_rate_control_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/normalized_unsigned_setpoint.h>
 #include <uORB/topics/parameter_update.h>
@@ -114,6 +116,7 @@ private:
 	uORB::SubscriptionData<airspeed_validated_s> _airspeed_validated_sub{ORB_ID(airspeed_validated)};
 
 	uORB::Publication<actuator_controls_status_s>	_actuator_controls_status_pub;
+	uORB::Publication<fw_rate_control_status_s>	_fw_rate_control_status_pub{ORB_ID(fw_rate_control_status)};
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::PublicationMulti<rate_ctrl_status_s>	_rate_ctrl_status_pub{ORB_ID(rate_ctrl_status)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub;
@@ -159,6 +162,20 @@ private:
 		(ParamFloat<px4::params::FW_ACRO_Y_MAX>) _param_fw_acro_y_max,
 		(ParamFloat<px4::params::FW_ACRO_Z_MAX>) _param_fw_acro_z_max,
 		(ParamInt<px4::params::FW_ACRO_YAW_EN>) _param_fw_acro_yaw_en,
+		(ParamInt<px4::params::FW_ADRC_EN>) _param_fw_adrc_en,
+		(ParamFloat<px4::params::FW_ADRC_R0>) _param_fw_adrc_r0,
+		(ParamFloat<px4::params::FW_ADRC_H0>) _param_fw_adrc_h0,
+		(ParamFloat<px4::params::FW_ADRC_B_R>) _param_fw_adrc_b_r,
+		(ParamFloat<px4::params::FW_ADRC_B_P>) _param_fw_adrc_b_p,
+		(ParamFloat<px4::params::FW_ADRC_B_Y>) _param_fw_adrc_b_y,
+		(ParamFloat<px4::params::FW_ADRC_WO_R>) _param_fw_adrc_wo_r,
+		(ParamFloat<px4::params::FW_ADRC_WO_P>) _param_fw_adrc_wo_p,
+		(ParamFloat<px4::params::FW_ADRC_WO_Y>) _param_fw_adrc_wo_y,
+		(ParamFloat<px4::params::FW_ADRC_K_R>) _param_fw_adrc_k_r,
+		(ParamFloat<px4::params::FW_ADRC_K_P>) _param_fw_adrc_k_p,
+		(ParamFloat<px4::params::FW_ADRC_K_Y>) _param_fw_adrc_k_y,
+		(ParamFloat<px4::params::FW_ADRC_ALPHA>) _param_fw_adrc_alpha,
+		(ParamFloat<px4::params::FW_ADRC_DELTA>) _param_fw_adrc_delta,
 
 		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,
 		(ParamFloat<px4::params::FW_AIRSPD_MIN>) _param_fw_airspd_min,
@@ -208,6 +225,9 @@ private:
 	)
 
 	RateControl _rate_control; ///< class for rate control calculations
+	ADRCRateControl _adrc_rate_control;
+	bool _use_adrc{false};
+	bool _adrc_was_active{false};
 
 	void updateActuatorControlsStatus(float dt);
 
