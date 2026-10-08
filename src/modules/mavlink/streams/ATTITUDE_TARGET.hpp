@@ -34,6 +34,9 @@
 #ifndef ATTITUDE_TARGET_HPP
 #define ATTITUDE_TARGET_HPP
 
+#include <cstring>
+
+#include <uORB/topics/debug_array.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
 
@@ -58,6 +61,7 @@ private:
 
 	uORB::Subscription _att_sp_sub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Subscription _att_rates_sp_sub{ORB_ID(vehicle_rates_setpoint)};
+	uORB::Subscription _fw_ctrl_debug_sub{ORB_ID(debug_array)};
 	hrt_abstime _last_att_sp_update{0};
 
 	bool send() override
@@ -90,6 +94,18 @@ private:
 			msg.body_roll_rate = att_rates_sp.roll;
 			msg.body_pitch_rate = att_rates_sp.pitch;
 			msg.body_yaw_rate = att_rates_sp.yaw;
+
+			// Use the final rate setpoint after the optional FW rate-test signal is injected.
+			// Fall back to vehicle_rates_setpoint if the debug sample is missing or stale.
+			debug_array_s fw_ctrl_debug{};
+
+			if (_fw_ctrl_debug_sub.copy(&fw_ctrl_debug)
+			    && std::strncmp(fw_ctrl_debug.name, "FW_CTRL", sizeof(fw_ctrl_debug.name)) == 0
+			    && hrt_elapsed_time(&fw_ctrl_debug.timestamp) < 500_ms) {
+				msg.body_roll_rate = fw_ctrl_debug.data[0];
+				msg.body_pitch_rate = fw_ctrl_debug.data[1];
+				msg.body_yaw_rate = fw_ctrl_debug.data[2];
+			}
 
 			msg.thrust = matrix::Vector3f(att_sp.thrust_body).norm();
 

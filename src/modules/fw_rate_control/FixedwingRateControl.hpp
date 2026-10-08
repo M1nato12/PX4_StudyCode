@@ -54,6 +54,7 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/SubscriptionCallback.hpp>
+#include <uORB/topics/debug_array.h>
 #include <uORB/topics/actuator_controls_status.h>
 #include <uORB/topics/airspeed_validated.h>
 #include <uORB/topics/battery_status.h>
@@ -116,6 +117,7 @@ private:
 	uORB::SubscriptionData<airspeed_validated_s> _airspeed_validated_sub{ORB_ID(airspeed_validated)};
 
 	uORB::Publication<actuator_controls_status_s>	_actuator_controls_status_pub;
+	uORB::Publication<debug_array_s>		_rate_debug_pub{ORB_ID(debug_array)};
 	uORB::Publication<fw_rate_control_status_s>	_fw_rate_control_status_pub{ORB_ID(fw_rate_control_status)};
 	uORB::Publication<vehicle_rates_setpoint_s>	_rate_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::PublicationMulti<rate_ctrl_status_s>	_rate_ctrl_status_pub{ORB_ID(rate_ctrl_status)};
@@ -163,6 +165,7 @@ private:
 		(ParamFloat<px4::params::FW_ACRO_Z_MAX>) _param_fw_acro_z_max,
 		(ParamInt<px4::params::FW_ACRO_YAW_EN>) _param_fw_acro_yaw_en,
 		(ParamInt<px4::params::FW_ADRC_EN>) _param_fw_adrc_en,
+		(ParamBool<px4::params::FW_RATE_TEST>) _param_fw_rate_test,
 		(ParamFloat<px4::params::FW_ADRC_R0>) _param_fw_adrc_r0,
 		(ParamFloat<px4::params::FW_ADRC_H0>) _param_fw_adrc_h0,
 		(ParamFloat<px4::params::FW_ADRC_B_R>) _param_fw_adrc_b_r,
@@ -220,10 +223,12 @@ private:
 		(ParamFloat<px4::params::TRIM_PITCH>) _param_trim_pitch,
 		(ParamFloat<px4::params::TRIM_ROLL>) _param_trim_roll,
 		(ParamFloat<px4::params::TRIM_YAW>) _param_trim_yaw,
-
 		(ParamInt<px4::params::FW_SPOILERS_MAN>) _param_fw_spoilers_man
 	)
 
+	hrt_abstime _rate_test_start_us{0};
+	matrix::Vector3f _debug_rates_setpoint{};
+	matrix::Vector3f _debug_rates{};
 	RateControl _rate_control; ///< class for rate control calculations
 	ADRCRateControl _adrc_rate_control;
 	bool _use_adrc{false};

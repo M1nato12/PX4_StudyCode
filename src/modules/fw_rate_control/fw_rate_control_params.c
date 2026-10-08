@@ -456,6 +456,16 @@ PARAM_DEFINE_INT32(FW_SPOILERS_MAN, 0);
 PARAM_DEFINE_INT32(FW_ACRO_YAW_EN, 0);
 
 /**
+ * Enable the fixed-wing three-axis rate sine test.
+ *
+ * When enabled, small sine signals are added to the roll, pitch and yaw
+ * rate setpoints.
+ *
+ * @boolean
+ * @group FW Rate Control
+ */
+PARAM_DEFINE_INT32(FW_RATE_TEST, 0);
+/**
  * Enable the fixed-wing ADRC rate controller.
  *
  * ADRC is used only when all ADRC parameters are valid. Tune its control

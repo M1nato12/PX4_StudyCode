@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include "FixedwingRateControl.hpp"
+#include <cstring>
 
 using namespace time_literals;
 using namespace matrix;
@@ -370,27 +371,44 @@ void FixedwingRateControl::Run()
 					body_rates_setpoint = Vector3f(-_rates_sp.yaw, _rates_sp.pitch, _rates_sp.roll);
 				}
 
-				// pitch test
-				const hrt_abstime now = hrt_absolute_time();
+				// Optional gentle three-axis rate excitation around the normal setpoints
+				if (_param_fw_rate_test.get()) {
+					const hrt_abstime now = hrt_absolute_time();
 
-				static hrt_abstime excitation_start_us{0};
+					if (_rate_test_start_us == 0) {
+						_rate_test_start_us = now;
+					}
 
-				if (excitation_start_us == 0) {
-					excitation_start_us = now;
+					const float test_time_s = (now - _rate_test_start_us) * 1e-6f;
+					const float two_pi_time = 2.f * M_PI_F * test_time_s;
+
+					// Roll: about 2.3 deg/s, period about 6.7 s
+					constexpr float roll_amplitude = 0.04f;
+					constexpr float roll_frequency_hz = 0.15f;
+
+					// Pitch: about 2.9 deg/s, period 5 s
+					constexpr float pitch_amplitude = 0.05f;
+					constexpr float pitch_frequency_hz = 0.20f;
+
+					// Yaw: about 1.7 deg/s, period 4 s
+					constexpr float yaw_amplitude = 0.03f;
+					constexpr float yaw_frequency_hz = 0.25f;
+
+					body_rates_setpoint(0) +=
+						roll_amplitude * sinf(two_pi_time * roll_frequency_hz);
+
+					body_rates_setpoint(1) +=
+						pitch_amplitude * sinf(two_pi_time * pitch_frequency_hz);
+
+					body_rates_setpoint(2) +=
+						yaw_amplitude * sinf(two_pi_time * yaw_frequency_hz);
+
+				} else {
+					_rate_test_start_us = 0;
 				}
 
-				const float test_time_s = (now - excitation_start_us) * 1e-6f;
-
-				constexpr float pitch_amplitude = 0.35f;
-				constexpr float pitch_frequency_hz = 0.2f;
-
-				body_rates_setpoint(1) =
-					pitch_amplitude * sinf(2.f * M_PI_F * pitch_frequency_hz * test_time_s);
-
-				// 将控制器实际使用的俯仰目标记录到 vehicle_rates_setpoint
-				_rates_sp.pitch = body_rates_setpoint(1);
-				_rates_sp.timestamp = now;
-				_rate_sp_pub.publish(_rates_sp);
+				_debug_rates_setpoint = body_rates_setpoint;
+				_debug_rates = rates;
 
 				const Vector3f gain_ff(_param_fw_rr_ff.get(), _param_fw_pr_ff.get(), _param_fw_yr_ff.get());
 				const Vector3f scaled_gain_ff = gain_ff / _airspeed_scaling;
@@ -530,6 +548,36 @@ void FixedwingRateControl::Run()
 
 				_vehicle_torque_setpoint.timestamp = hrt_absolute_time();
 				_vehicle_torque_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
+
+				if (_vcontrol_mode.flag_control_rates_enabled) {
+					debug_array_s control_debug{};
+					control_debug.timestamp = _vehicle_torque_setpoint.timestamp;
+					control_debug.id = 1;
+
+					std::strncpy(
+						control_debug.name,
+						"FW_CTRL",
+						sizeof(control_debug.name)
+					);
+
+					// Rate setpoints [rad/s]
+					control_debug.data[0] = _debug_rates_setpoint(0);
+					control_debug.data[1] = _debug_rates_setpoint(1);
+					control_debug.data[2] = _debug_rates_setpoint(2);
+
+					// Measured rates [rad/s]
+					control_debug.data[3] = _debug_rates(0);
+					control_debug.data[4] = _debug_rates(1);
+					control_debug.data[5] = _debug_rates(2);
+
+					// Final torque setpoints [-1, 1]
+					control_debug.data[6] = _vehicle_torque_setpoint.xyz[0];
+					control_debug.data[7] = _vehicle_torque_setpoint.xyz[1];
+					control_debug.data[8] = _vehicle_torque_setpoint.xyz[2];
+
+					_rate_debug_pub.publish(control_debug);
+				}
+
 				_vehicle_torque_setpoint_pub.publish(_vehicle_torque_setpoint);
 			}
 		}
